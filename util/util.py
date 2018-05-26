@@ -7,11 +7,6 @@ from keras.models import Model, Sequential, load_model
 import matplotlib.pyplot as plt
 
 column_names = ['hour', 'minute', 'second', 'micsec', 'horAcc', 'vertAcc']
-
-def getSpectro(filename):
-    freq_array, segment_times, spectrogram = sig.spectrogram(x=signal, fs=25600, nperseg=2560,noverlap=0)
-    return spectrogram.T
-    
     
 # maak train en test data
 def splitTestAndTrain(np_spec, test_frac=0.1):
