@@ -23,8 +23,17 @@ def LOG(msg, printLog=False):
     logger.handlers[0].flush()
     if printLog:
         print(msg)
-    
 
+def LOG_HEADER(msg, printLog=False):
+    global logger
+    if not logger:
+        initLogging()
+    msg = '####################################\n#\n# ' + msg + '\n#\n####################################\n'
+    logger.info(msg)
+    logger.handlers[0].flush()
+    if printLog:
+        print(msg)
+    
 def DEBUG(msg):
     global logger
     if not logger:
