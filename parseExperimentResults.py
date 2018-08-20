@@ -1,8 +1,17 @@
 import matplotlib.pyplot as plt
 import os
 
-fileName = 'plots/20180816_orgsHelft2.txt'
-pattern = '# 20180816_orgsHelft2'
+# fileName = 'plots/20180816_orgsHelft2.txt'
+# pattern = '# 20180816_orgsHelft2'
+
+# fileName = 'plots/20180817_train_G428.txt'
+# pattern = '# 20180817_orgG428'
+
+# fileName = 'plots/20180817_train_G527.txt'
+# pattern = '# 20180817_orgG527'
+
+fileName = 'plots/20180817_train_Studio.txt'
+pattern = '# 20180817_orgStudio'
 
 targetPlotFolder = 'plots/' + pattern[2:] + '/'
 if not os.path.isdir(targetPlotFolder):
@@ -47,7 +56,7 @@ for feature in features:
         plt.title('Room: ' + room)
         plt.ylabel(feature)
         plt.xlabel('epochs')
-        plt.ylim([0.85, 1])
+        plt.ylim([0.8, 1])
         plt.legend()
 
         figname = targetPlotFolder + pattern[2:] + '_' + room + '_' + feature + '.png'

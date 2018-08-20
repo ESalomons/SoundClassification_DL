@@ -3,8 +3,8 @@ import os
 
 def doMain():
     # createPlotsInDir('plots/20180720_allOrgs')
-    createPlotsInDir('plots/20180816_orgsHelft2')
-
+    # createPlotsInDir('plots/20180816_orgsHelft2')
+    createPlotsInDir('plots/20180817_orgStudio')
 
 def createPlotsInDir(plotDirsLocation):
     nrPicsInRow = 3
