@@ -1,22 +1,21 @@
 import matplotlib.pyplot as plt
 import os
+import createPlotHtml
 
-# fileName = 'plots/20180816_orgsHelft2.txt'
-# pattern = '# 20180816_orgsHelft2'
+# fileName = 'plots/20180817_train_Studio.txt'
+# pattern = '# 20180817_orgStudio'
+experimentId = '20180720_allOrgs'
+#experimentId = '20180820_orgStudio_dropout'
 
-# fileName = 'plots/20180817_train_G428.txt'
-# pattern = '# 20180817_orgG428'
-
-# fileName = 'plots/20180817_train_G527.txt'
-# pattern = '# 20180817_orgG527'
-
-fileName = 'plots/20180817_train_Studio.txt'
-pattern = '# 20180817_orgStudio'
+fileName = 'plots/{}.txt'.format(experimentId)
+pattern = '# ' + experimentId
 
 targetPlotFolder = 'plots/' + pattern[2:] + '/'
 if not os.path.isdir(targetPlotFolder):
     os.mkdir(targetPlotFolder)
 
+print('creating plots in ' + targetPlotFolder)
+    
 rooms = []
 features = ['F1 overall', 'F1 music', 'F1 voice', 'F1 environment']
 
@@ -109,3 +108,4 @@ def version1():
             plt.savefig(figname, bbox_inches='tight', dpi=200)  # 600
 # plt.show()
 
+createPlotHtml.createPlotsInDir('plots/' + experimentId)

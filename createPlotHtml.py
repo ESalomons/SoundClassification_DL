@@ -4,7 +4,7 @@ import os
 def doMain():
     # createPlotsInDir('plots/20180720_allOrgs')
     # createPlotsInDir('plots/20180816_orgsHelft2')
-    createPlotsInDir('plots/20180817_orgStudio')
+    createPlotsInDir('plots/20180820_orgG428_dropout')
 
 def createPlotsInDir(plotDirsLocation):
     nrPicsInRow = 3
