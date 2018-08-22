@@ -1,11 +1,13 @@
 import matplotlib.pyplot as plt
 import os
-import createPlotHtml
+from util import createPlotHtml
 
 # fileName = 'plots/20180817_train_Studio.txt'
 # pattern = '# 20180817_orgStudio'
 experimentId = '20180720_allOrgs'
-#experimentId = '20180820_orgStudio_dropout'
+experimentId = '20180820_orgStudio_dropout'
+experimentId = '20180821_orgStudio_G428'
+
 
 fileName = 'plots/{}.txt'.format(experimentId)
 pattern = '# ' + experimentId
