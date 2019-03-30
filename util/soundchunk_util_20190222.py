@@ -1,11 +1,12 @@
-import wave
 import os
 import numpy as np
 import itertools
 import operator
-from util import WavFileParts
+import librosa
 
-def lowpass(signal, alpha):
+def lowpass(signal, fs, alpha):
+    # alpha correction; originally determined for 44100 Hz
+    alpha = (44100 * alpha) / fs
     lowpassSig = [0] * len(signal)
     lowpassSig[0] = abs(signal[0])
     abssigTimesAlpha = alpha * np.array(abs(signal))
@@ -14,23 +15,27 @@ def lowpass(signal, alpha):
         lowpassSig[i] = (abssigTimesAlpha[i] + (1 - alpha) * lowpassSig[i - 1])
     return lowpassSig
 
-def getSoundThresholdFromSignal(signal, alpha, thresholdFactor):
-    lpsig = lowpass(signal, alpha)
+def getSoundThresholdFromSignal(signal, fs, alpha, thresholdFactor):
+    lpsig = lowpass(signal, fs, alpha)
     return thresholdFactor * np.max(lpsig)
 
 def getSoundThresholdFromFile(filename, start, end, alpha, thresholdfactor, fsTarget=None):
     if not fsTarget:
+        print('Using original Fs')
         signal, fsFile = librosa.load(filename, offset=start, duration=(end-start))
     else:
         signal, fsFile = librosa.load(filename, sr=fsTarget, offset=start, duration=(end-start))
-    return getSoundThresholdFromSignal(signal, alpha, thresholdfactor)
+    return getSoundThresholdFromSignal(signal, fsTarget, alpha, thresholdfactor)
 
 def determineThresholds(microphones,
-                        datasetDir='/Volumes/SAA_DATA/datasets/localizationRecordings/20160919',
-                        fileDate=160919,
-                        fileNum=218,
-                        silenceStart=1,
-                        silenceEnd=5
+                        datasetDir,
+                        fileDate,
+                        fileNum,
+                        silenceStart,
+                        silenceEnd,
+                        alpha,
+                        thresholdfactor,
+                        targetFs
                         ):
     thresholds = {}
 
@@ -38,24 +43,25 @@ def determineThresholds(microphones,
 
     for microphone in microphones:
         wavFileName = filename.format(microphone)
-        soundThreshold = getSoundThresholdFromFile(wavFileName, silenceStart, silenceEnd)
+        soundThreshold = getSoundThresholdFromFile(filename=wavFileName,
+                                                   start=silenceStart,
+                                                   end=silenceEnd,
+                                                   alpha=alpha,
+                                                   thresholdfactor=thresholdfactor,
+                                                   fsTarget=targetFs)
         thresholds[microphone] = soundThreshold
 
     return thresholds
 
 
-def getSoundChunks(filename, start, end, soundThreshold):
+def getSoundChunks(filename, start, end, soundThreshold, alpha, minimalSoundTime, targetFs):
     timeChunks = []
-    wavFile = wave.open(filename, 'rb')
-    wavFile.rewind()
-    nFrames = wavFile.getnframes()
-    framerate = wavFile.getframerate()
-    signal = np.fromstring(
-        wavFile.readframes(int(end * framerate))[int(start * 2 * framerate):int(end * 2 * framerate)],
-        np.int16)  # 2* framerate, because conversion int16
-    wavFile.close()
 
-    soundChunks = getSoundChunkIndices(signal, soundThreshold)
+    signal, framerate = librosa.load(filename, sr=targetFs, offset=start, duration=(end - start))
+    soundChunks = getSoundChunkIndices(signal=signal,
+                                       fs=targetFs,
+                                       threshold=soundThreshold,
+                                       alpha=alpha)
     nr = 1
 
     for chunk in soundChunks:
@@ -69,12 +75,16 @@ def getSoundChunks(filename, start, end, soundThreshold):
 
 
 def findAndSaveSoundChunks(fileparts,
-                           dirName='/Users/etto/Dropbox/git/wavLocalization/results',
-                           datasetDir='/Volumes/SAA_DATA/datasets/localizationRecordings/20160919',
-                           fileDate=160919,
-                           thresholdFileNum=218,
-                           thrSilenceStart=1,
-                           thrSilenceEnd=5):
+                           dirName,
+                           datasetDir,
+                           fileDate,
+                           thresholdFileNum,
+                           thrSilenceStart,
+                           thrSilenceEnd,
+                           alpha,
+                           thresholdfactor,
+                           minimalSoundTime,
+                           targetFs):
     """
     print soundchunks in json format
     store the printout in results/soundchunks.py
@@ -85,10 +95,12 @@ def findAndSaveSoundChunks(fileparts,
     # determine thresholds
     thresholds = determineThresholds(microphones, datasetDir=datasetDir,
                                      fileDate=fileDate, fileNum=thresholdFileNum,
-                                     silenceStart=thrSilenceStart, silenceEnd=thrSilenceEnd
-                                     )  # dictionary: int -> float
+                                     silenceStart=thrSilenceStart, silenceEnd=thrSilenceEnd,
+                                     alpha=alpha,
+                                     thresholdfactor=thresholdfactor,
+                                     targetFs=targetFs)  # dictionary: int -> float
 
-    
+    dirName = dirName + '_Fs{}'.format(targetFs)
     if not os.path.isdir(dirName):
         os.mkdir(dirName)
 
@@ -99,8 +111,13 @@ def findAndSaveSoundChunks(fileparts,
         for filepart in fileparts:  # type: WavFilePart
             for microphone in microphones:
                 filename = datasetDir + '/{:d}_{:d}_mono{:d}.wav'.format(fileDate, filepart.fileNr, microphone)
-                chunks = getSoundChunks(filename, filepart.getStartSecs(), filepart.getEndSecs(),
-                                                            thresholds[microphone])
+                chunks = getSoundChunks( filename=filename,
+                                         start=filepart.getStartSecs(),
+                                         end=filepart.getEndSecs(),
+                                         soundThreshold=thresholds[microphone],
+                                         alpha=alpha,
+                                         minimalSoundTime=minimalSoundTime,
+                                         targetFs=targetFs)
                 filepart.setSoundChunks(microphone, chunks)
             out.write(filepart.toJSON())
             print('written ' + str(filepart))
@@ -110,8 +127,8 @@ def findAndSaveSoundChunks(fileparts,
     open(dirName + '/__init__.py', 'w').close()
 
 
-def getSoundChunkIndices(signal, alpha, threshold):
-    lpSig = lowpass(signal, alpha)
+def getSoundChunkIndices(signal, fs, alpha, threshold):
+    lpSig = lowpass(signal, fs, alpha)
     indices = np.array(range(len(signal)))
     indices = indices[lpSig > threshold]
 
