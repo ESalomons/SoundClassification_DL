@@ -90,7 +90,6 @@ def getSpectrosFromFilesPerCategory(filesPerCategory, fsTarget, NFFT, classes):
             signal, fs = librosa.load(filename, sr=fsTarget)
             print('reading ' + filename)
             freq_array, segment_times, spectrogram = sig.spectrogram(x=signal, fs=fsTarget, nperseg=NFFT, noverlap=0)
-            print('spec')
             spectros[clz].append(spectrogram.T)
     return spectros
 
